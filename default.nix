@@ -1,5 +1,5 @@
-{ mkDerivation, base, containers, ghc, lib, regex-posix, sort
-, split
+{ mkDerivation, base, bytestring, containers, cryptonite, ghc, lib
+, regex-posix, sort, split
 }:
 mkDerivation {
   pname = "adventofcode16-haskell";
@@ -8,7 +8,7 @@ mkDerivation {
   isLibrary = true;
   isExecutable = true;
   libraryHaskellDepends = [
-    base containers ghc regex-posix sort split
+    base bytestring containers cryptonite ghc regex-posix sort split
   ];
   executableHaskellDepends = [ base ];
   testHaskellDepends = [ base ];

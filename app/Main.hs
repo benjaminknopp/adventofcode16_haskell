@@ -4,6 +4,7 @@ import Day01 (firstDuplicate, shortestDistance)
 import Day02 (generateCode1, generateCode2)
 import Day03 (addSides, toVert)
 import Day04 (decipher, splitDash, sumIds, searchNorth)
+import Day05 (getPassword, solutionB, first5zero, hash)
 
 main :: IO ()
 main = do
@@ -11,6 +12,14 @@ main = do
     day02
     day03
     day04
+    day05
+
+day05 :: IO ()
+day05 = do
+    let x = getPassword "ffykfhsq" -- "abc"
+    print x
+    let x' = solutionB $ filter first5zero $ map (hash "ffykfhsq") [1..]
+    print x'
 
 day04 :: IO ()
 day04 = do

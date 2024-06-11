@@ -22,19 +22,22 @@ library
         Day01,
         Day02,
         Day03,
-        Day04
+        Day04,
+        Day05
     -- other-modules:
     -- other-extensions:
     build-depends:    
-        base ^>=4.18.2.1,
-        split,
-        containers,
-        ghc,
-        regex-posix,
-        sort
+        base ^>=4.18.2.1
+        , split
+        , containers
+        , ghc
+        , regex-posix
+        , sort
+        , bytestring
+        , cryptonite
     hs-source-dirs:   src
     default-language: Haskell2010
-
+--
 executable adventofcode16-haskell
     import:           warnings
     main-is:          Main.hs
