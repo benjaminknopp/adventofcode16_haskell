@@ -5,6 +5,8 @@ import Day02 (generateCode1, generateCode2)
 import Day03 (addSides, toVert)
 import Day04 (decipher, splitDash, sumIds, searchNorth)
 import Day05 (getPassword, solutionB, first5zero, hash)
+import qualified Day06 (toVert)
+import Day06 (count)
 
 main :: IO ()
 main = do
@@ -12,7 +14,16 @@ main = do
     day02
     day03
     day04
-    day05
+    -- day05
+    day06
+
+day06 :: IO ()
+day06 = do
+    x <- readFile "data/input06.txt"
+    let result = map (fst . head . count) $ Day06.toVert $ lines x
+    let result2 = map (fst . last . count) $ Day06.toVert $ lines x
+    print result
+    print result2
 
 day05 :: IO ()
 day05 = do
