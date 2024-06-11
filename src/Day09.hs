@@ -1,3 +1,4 @@
+-- | Day 9: Explosives in Cyberspace 
 module Day09 where
 
 type Command = (Int, Int)

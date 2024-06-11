@@ -10,6 +10,7 @@ import Day06 (count)
 import Day07 (supportsTLS, supportsSSL)
 import Day08 ( State(State), parse, next )
 import Day09 ( duRek, insertTree, evalNode )
+import Day10 ( solve )
 
 main :: IO ()
 main = do
@@ -22,6 +23,10 @@ main = do
     day07
     day08
     day09
+    day10
+
+day10 :: IO ()
+day10 = readFile "data/input10.txt" >>= (print . (solve . lines))
 
 day09 :: IO ()
 day09 = do
