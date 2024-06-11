@@ -7,6 +7,7 @@ import Day04 (decipher, splitDash, sumIds, searchNorth)
 import Day05 (getPassword, solutionB, first5zero, hash)
 import qualified Day06 (toVert)
 import Day06 (count)
+import Day07 (supportsTLS, supportsSSL)
 
 main :: IO ()
 main = do
@@ -16,6 +17,15 @@ main = do
     day04
     -- day05
     day06
+    day07
+
+day07 :: IO ()
+day07 = do
+    x <- readFile "data/input07.txt"
+    let result = length $ filter supportsTLS (lines x)
+    let result2 = length $ filter supportsSSL (lines x)
+    print result
+    print result2
 
 day06 :: IO ()
 day06 = do
