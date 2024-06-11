@@ -1,8 +1,11 @@
 module Main where
 
-import qualified MyLib (someFunc)
+import Day01 (firstDuplicate, shortestDistance)
+-- import Day02 (generateCode)
 
 main :: IO ()
 main = do
-  putStrLn "Hello, Haskell!"
-  MyLib.someFunc
+    input <- getContents
+    putStrLn $ shortestDistance input
+    putStrLn $ firstDuplicate input
+    -- putStrLn (generateCode input)
