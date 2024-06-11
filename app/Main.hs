@@ -8,6 +8,7 @@ import Day05 (getPassword, solutionB, first5zero, hash)
 import qualified Day06 (toVert)
 import Day06 (count)
 import Day07 (supportsTLS, supportsSSL)
+import Day08 ( State(State), parse, next )
 
 main :: IO ()
 main = do
@@ -18,6 +19,19 @@ main = do
     -- day05
     day06
     day07
+    day08
+
+day08 :: IO ()
+day08 = do
+    x <- readFile "data/input08.txt"
+    let cmdStr = lines x
+        cmds =  map (parse . words) cmdStr
+        emptyField = State [['.' | _<-[0..49::Int]] | _<-[0..5::Int]] -- part two
+        result = foldl next emptyField cmds
+        State arr = result
+        count = foldl (\i c -> if c == '#' then i+1 else i) 0 $ concat arr :: Int
+    print count 
+    print result
 
 day07 :: IO ()
 day07 = do
