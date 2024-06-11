@@ -1,4 +1,7 @@
-module MyLib (someFunc) where
+module MyLib (getInput) where
+import System.IO
 
-someFunc :: IO ()
-someFunc = putStrLn "someFunc"
+getInput :: String -> IO String
+getInput fn = do
+    handle <- openFile fn ReadMode
+    hGetContents handle
