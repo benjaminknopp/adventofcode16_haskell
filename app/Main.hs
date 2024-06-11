@@ -9,6 +9,7 @@ import qualified Day06 (toVert)
 import Day06 (count)
 import Day07 (supportsTLS, supportsSSL)
 import Day08 ( State(State), parse, next )
+import Day09 ( duRek, insertTree, evalNode )
 
 main :: IO ()
 main = do
@@ -20,6 +21,15 @@ main = do
     day06
     day07
     day08
+    day09
+
+day09 :: IO ()
+day09 = do
+    x <- readFile "data/input09.txt"
+    let (_, result) = duRek (init x, 0)
+    let result2 = evalNode $ insertTree $ init x
+    print result
+    print result2
 
 day08 :: IO ()
 day08 = do
@@ -29,8 +39,8 @@ day08 = do
         emptyField = State [['.' | _<-[0..49::Int]] | _<-[0..5::Int]] -- part two
         result = foldl next emptyField cmds
         State arr = result
-        count = foldl (\i c -> if c == '#' then i+1 else i) 0 $ concat arr :: Int
-    print count 
+        count' = foldl (\i c -> if c == '#' then i+1 else i) 0 $ concat arr :: Int
+    print count' 
     print result
 
 day07 :: IO ()
