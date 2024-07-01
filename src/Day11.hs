@@ -1,5 +1,6 @@
 -- | Day 11: RTG
 module Day11 where
+import Prelude hiding (floor)
 import Data.List.Split
 import Data.List
 
@@ -8,28 +9,27 @@ type Element = String
 type Item = (Element, Type)
 type Cargo = [Item]
 
-type Floor = [Item]
--- type Building = (Floor, Floor, Floor, Floor)
+data Level = First | Second | Third | Fourth deriving ( Show, Enum, Eq )
+type Floor = (Level, Cargo)
 type Building = [Floor]
-data Elevator = First | Second | Third | Fourth deriving ( Show, Enum )
-type Direction = Elevator -> Elevator
+type Direction = Level -> Level
 down :: Direction
 down = pred
 up :: Direction
 up = succ
 
-type State = (Building, Elevator)
+type State = (Building, Level)
 
 example :: IO String
 example = readFile "data/example11.txt"
 
 -- | parse input
 parse :: String -> Building
-parse = map (foldr (_filterItems . toItem ) [] .  splitOn "a ") . lines
+parse = zip [First .. Fourth] . map (foldr (filterItems . toItem ) [] .  splitOn "a ") . lines
     where
-        _filterItems :: Maybe Item -> [Item] -> [Item]
-        _filterItems (Just x) xs = x:xs
-        _filterItems Nothing xs = xs
+        filterItems :: Maybe Item -> [Item] -> [Item]
+        filterItems (Just x) xs = x:xs
+        filterItems Nothing xs = xs
 
 -- | parse substring of description
 toItem :: String -> Maybe Item
@@ -41,7 +41,7 @@ toItem s
 -- | if there is a generator on the floo
 -- every chip must be powered
 isSafe :: Floor -> Bool
-isSafe xs
+isSafe (_, xs)
     | Generator `notElem` map snd xs = True
     | otherwise = let chips = filter ((Chip ==) . snd) xs
                       gens = filter ((Generator ==) . snd) xs
@@ -49,26 +49,36 @@ isSafe xs
                       isPowered c = fst c `elem` map fst gens
                   in all isPowered chips
 
+-- | Starting state from text example
 exampleState :: State
-exampleState = ([[("hydrogen",Chip),("lithium",Chip)],[("hydrogen",Generator)],[("lithium",Generator)],[]], First)
--- | move elevator with cargo >>> move [("hydrogen", Chip)] up exampleState ([[("lithium",Chip)],[("hydrogen",Chip),("hydrogen",Generator)],[("lithium",Generator)],[]], First)
+exampleState = ([(First, [("hydrogen",Chip),("lithium",Chip)]),
+                 (Second, [("hydrogen",Generator)]),
+                 (Third, [("lithium",Generator)]),
+                 (Fourth, [])
+                 ], First)
+
+-- | move elevator with cargo 
+-- >>> move [("hydrogen", Chip)] up exampleState
+-- ([(First, [("lithium",Chip)]), (Second, [("hydrogen",Chip),("hydrogen",Generator)]), (Third, [("lithium",Generator)]), (Fourth, [])], Second)
 move :: Cargo -> Direction -> State -> Maybe State
 move cargo dir state
-    | (not . all (`elem` floor)) cargo = Nothing
-    | otherwise = Just ([floor, floor', floor, floor], elevator')
+    | (not . all (`elem` snd floor)) cargo = Nothing
+    | otherwise = Just (building', elevator')
     where 
           elevator = snd state
           elevator' = dir elevator
-          floor = (fst state) !! fromEnum elevator
-          floor' = fst state !! fromEnum elevator'
+          building = fst state
+          floor = fst state !! fromEnum elevator
+          building' = updateBuilding cargo elevator elevator' building
 
--- :: Cargo -> Elevator -> Elevator -> Building -> Building
--- items from to building
+updateBuilding :: Cargo -> Level -> Level -> Building -> Building
+updateBuilding items from to = map (updateFloor items from to)
 
-_mg :: Eq a => ([a], [a]) -> a -> Maybe ([a], [a])
-_mg (from, to) item
-    | item `notElem` from = Nothing
-    | otherwise = Just (filter (/= item) from, item:to)
+updateFloor :: Cargo -> Level -> Level -> Floor -> Floor
+updateFloor cargo from to (level, items)
+    | level == from = (level, filter (`notElem` cargo) items)
+    | level == to = (level, items ++ cargo)
+    | otherwise = (level, items)
 
 solve11 :: Int
 solve11 = 42
