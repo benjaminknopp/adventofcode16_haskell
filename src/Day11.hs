@@ -13,18 +13,18 @@ type Cargo = [Item]
 data Level = First | Second | Third | Fourth deriving ( Show, Enum, Eq )
 type Floor = (Level, Cargo)
 type Building = [Floor]
--- type Direction = Level -> Level
--- down :: Direction
--- down = pred
--- up :: Direction
--- up = succ
-type Direction = Level -> Maybe Level
+type Direction = Level -> Level
 down :: Direction
-down First = Nothing
-down x = Just $ pred x
+down = pred
 up :: Direction
-up Fourth = Nothing
-up x = Just $ succ x
+up = succ
+-- type Direction = Level -> Maybe Level
+-- down :: Direction
+-- down First = Nothing
+-- down x = Just $ pred x
+-- up :: Direction
+-- up Fourth = Nothing
+-- up x = Just $ succ x
 
 type State = (Building, Level)
 
@@ -48,14 +48,20 @@ toItem s
 
 -- | if there is a generator on the floo
 -- every chip must be powered
-isSafe :: Floor -> Bool
-isSafe (_, xs)
+floorSafe :: Floor -> Bool
+floorSafe (_, xs)
     | Generator `notElem` map snd xs = True
     | otherwise = let chips = filter ((Chip ==) . snd) xs
                       gens = filter ((Generator ==) . snd) xs
                       isPowered :: Item -> Bool
                       isPowered c = fst c `elem` map fst gens
                   in all isPowered chips
+
+buildingSafe :: Building -> Bool
+buildingSafe = all floorSafe
+
+stateSafe :: State -> Bool
+stateSafe = all floorSafe . fst
 
 -- | Starting state from text example
 exampleState :: State
@@ -68,17 +74,13 @@ exampleState = ([(First, [("hydrogen",Chip),("lithium",Chip)]),
 -- | move elevator with cargo 
 -- >>> move [("hydrogen", Chip)] up exampleState
 -- ([(First, [("lithium",Chip)]), (Second, [("hydrogen",Chip),("hydrogen",Generator)]), (Third, [("lithium",Generator)]), (Fourth, [])], Second)
-move :: Cargo -> Direction -> Maybe State -> Maybe State
-move _ _  Nothing = Nothing
-move cargo dir (Just state)
-    | (not . all (`elem` snd floor)) cargo = Nothing
-    | isNothing $ dir elevator = Nothing
-    | otherwise = Just (building', elevator')
+move :: Cargo -> Direction -> State -> State
+move cargo dir state = (building', elevator')
     where 
           elevator = snd state
-          Just elevator' = dir elevator
+          elevator' = dir elevator
           building = fst state
-          floor = fst state !! fromEnum elevator
+          -- floor = fst state !! fromEnum elevator
           building' = updateBuilding cargo elevator elevator' building
 
           updateBuilding :: Cargo -> Level -> Level -> Building -> Building
@@ -90,10 +92,31 @@ move cargo dir (Just state)
               | level == to = (level, items ++ cargo')
               | otherwise = (level, items)
 
-next :: Maybe State -> [Maybe State]
-next Nothing = [Nothing]
-next (Just state@(building, elevator)) = [move cargo dir (Just state) | dir <- [up, down], cargo <- map return $ snd $ building !! fromEnum elevator]
+next :: State -> [State]
+next state@(building, elevator@First) = filter stateSafe $
+    [move cargo up state | cargo <- [[floorItems!!i, floorItems!!j] | i <- [0..n-1], j <- [0..n-1], i < j]]
+    ++ [move cargo up state | cargo <- map return floorItems]
+    where 
+          floorItems = snd $ building !! fromEnum elevator
+          n = length floorItems
+next state@(building, elevator@Fourth) = filter stateSafe $
+    [move cargo down state | cargo <- [[floorItems!!i, floorItems!!j] | i <- [0..n-1], j <- [0..n-1], i < j]]
+    ++ [move cargo down state | cargo <- map return floorItems]
+    where 
+          floorItems = snd $ building !! fromEnum elevator
+          n = length floorItems
+next state@(building, elevator) = filter stateSafe $
+    [move cargo dir state | dir <- [up, down], cargo <- [[floorItems!!i, floorItems!!j] | i <- [0..n-1], j <- [0..n-1], i < j]]
+    ++ [move cargo down state | cargo <- map return floorItems]
+    where 
+          floorItems = snd $ building !! fromEnum elevator
+          n = length floorItems
+
+solved :: State -> Bool
+solved (building, _) = n == length (building !! 3)    
+    where n = sum $ map (length . snd) building
 
 -- | init >>= next >>= next ....
-solve11 :: [Maybe State]
-solve11 = next (Just exampleState) >>= next
+solve11 :: [State]
+solve11 = next exampleState >>= next >>= next
+-- solve11 = next exampleState >>= next >>= next >>= next >>= next >>= next >>= next >>= next >>= next >>= next >>= next >>= next
