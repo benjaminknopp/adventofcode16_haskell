@@ -3,6 +3,7 @@ module Day11 where
 import Prelude hiding (floor)
 import Data.List.Split
 import Data.List
+import Data.Maybe
 
 data Type = Chip | Generator deriving ( Show, Eq )
 type Element = String
@@ -12,11 +13,18 @@ type Cargo = [Item]
 data Level = First | Second | Third | Fourth deriving ( Show, Enum, Eq )
 type Floor = (Level, Cargo)
 type Building = [Floor]
-type Direction = Level -> Level
+-- type Direction = Level -> Level
+-- down :: Direction
+-- down = pred
+-- up :: Direction
+-- up = succ
+type Direction = Level -> Maybe Level
 down :: Direction
-down = pred
+down First = Nothing
+down x = Just $ pred x
 up :: Direction
-up = succ
+up Fourth = Nothing
+up x = Just $ succ x
 
 type State = (Building, Level)
 
@@ -60,25 +68,32 @@ exampleState = ([(First, [("hydrogen",Chip),("lithium",Chip)]),
 -- | move elevator with cargo 
 -- >>> move [("hydrogen", Chip)] up exampleState
 -- ([(First, [("lithium",Chip)]), (Second, [("hydrogen",Chip),("hydrogen",Generator)]), (Third, [("lithium",Generator)]), (Fourth, [])], Second)
-move :: Cargo -> Direction -> State -> Maybe State
-move cargo dir state
+move :: Cargo -> Direction -> Maybe State -> Maybe State
+move _ _  Nothing = Nothing
+move cargo dir (Just state)
     | (not . all (`elem` snd floor)) cargo = Nothing
+    | isNothing $ dir elevator = Nothing
     | otherwise = Just (building', elevator')
     where 
           elevator = snd state
-          elevator' = dir elevator
+          Just elevator' = dir elevator
           building = fst state
           floor = fst state !! fromEnum elevator
           building' = updateBuilding cargo elevator elevator' building
 
-updateBuilding :: Cargo -> Level -> Level -> Building -> Building
-updateBuilding items from to = map (updateFloor items from to)
+          updateBuilding :: Cargo -> Level -> Level -> Building -> Building
+          updateBuilding items from to = map (updateFloor items from to)
 
-updateFloor :: Cargo -> Level -> Level -> Floor -> Floor
-updateFloor cargo from to (level, items)
-    | level == from = (level, filter (`notElem` cargo) items)
-    | level == to = (level, items ++ cargo)
-    | otherwise = (level, items)
+          updateFloor :: Cargo -> Level -> Level -> Floor -> Floor
+          updateFloor cargo' from to (level, items)
+              | level == from = (level, filter (`notElem` cargo') items)
+              | level == to = (level, items ++ cargo')
+              | otherwise = (level, items)
 
-solve11 :: Int
-solve11 = 42
+next :: Maybe State -> [Maybe State]
+next Nothing = [Nothing]
+next (Just state@(building, elevator)) = [move cargo dir (Just state) | dir <- [up, down], cargo <- map return $ snd $ building !! fromEnum elevator]
+
+-- | init >>= next >>= next ....
+solve11 :: [Maybe State]
+solve11 = next (Just exampleState) >>= next
