@@ -113,10 +113,10 @@ next state@(building, elevator) = filter stateSafe $
           n = length floorItems
 
 solved :: State -> Bool
-solved (building, _) = n == length (building !! 3)    
+solved (building, _) = n == (length . snd) (building !! 3)
     where n = sum $ map (length . snd) building
 
 -- | init >>= next >>= next ....
 solve11 :: [State]
-solve11 = next exampleState >>= next >>= next
--- solve11 = next exampleState >>= next >>= next >>= next >>= next >>= next >>= next >>= next >>= next >>= next >>= next >>= next
+-- solve11 = next exampleState
+solve11 = next exampleState >>= next >>= next >>= next >>= next >>= next >>= next >>= next >>= next >>= next >>= next
