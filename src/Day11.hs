@@ -3,7 +3,8 @@ module Day11 where
 import Prelude hiding (floor)
 import Data.List.Split
 import Data.List
-import Data.Maybe
+import Control.Monad
+-- import Data.Maybe
 
 data Type = Chip | Generator deriving ( Show, Eq )
 type Element = String
@@ -117,6 +118,11 @@ solved (building, _) = n == (length . snd) (building !! 3)
     where n = sum $ map (length . snd) building
 
 -- | init >>= next >>= next ....
-solve11 :: [State]
+-- solve11 :: [State]
 -- solve11 = next exampleState
-solve11 = next exampleState >>= next >>= next >>= next >>= next >>= next >>= next >>= next >>= next >>= next >>= next
+-- solve11 = next exampleState >>= next >>= next >>= next >>= next >>= next >>= next >>= next >>= next >>= next >>= next
+repeatNext :: State -> Int -> [State]
+repeatNext start x = foldr (<=<) return (replicate x next) start
+
+solve11 :: Int -> Bool
+solve11 x = any solved $ repeatNext exampleState x
