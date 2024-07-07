@@ -84,20 +84,20 @@ move cargo dir state = (building', elevator')
 
 next :: State -> [State]
 next state@(building, elevator@First) = filter stateSafe $
-    [move cargo up state | cargo <- [[floorItems!!i, floorItems!!j] | i <- [0..n-1], j <- [0..n-1], i < j]]
-    ++ [move cargo up state | cargo <- map return floorItems]
-    where 
-          floorItems = snd $ building !! fromEnum elevator
-          n = length floorItems
+     _generateNextStates building elevator state up up
 next state@(building, elevator@Fourth) = filter stateSafe $
     [move cargo down state | cargo <- map return floorItems]
     where 
           floorItems = snd $ building !! fromEnum elevator
 next state@(building, elevator) = filter stateSafe $
-    -- [move cargo dir state | dir <- [up, down], cargo <- [[floorItems!!i, floorItems!!j] | i <- [0..n-1], j <- [0..n-1], i < j]]
-    -- ++ [move cargo down state | cargo <- map return floorItems]
-    [move cargo up state | cargo <- [[floorItems!!i, floorItems!!j] | i <- [0..n-1], j <- [0..n-1], i < j]]
-    ++ [move cargo down state | cargo <- map return floorItems]
+     _generateNextStates building elevator state up down
+    -- -- [move cargo dir state | dir <- [up, down], cargo <- [[floorItems!!i, floorItems!!j] | i <- [0..n-1], j <- [0..n-1], i < j]]
+    -- -- ++ [move cargo down state | cargo <- map return floorItems]
+
+_generateNextStates :: Building -> Level -> State -> Direction -> Direction -> [State]
+_generateNextStates building elevator state dir1 dir2 = 
+    [move cargo dir1 state | cargo <- [[floorItems!!i, floorItems!!j] | i <- [0..n-1], j <- [0..n-1], i < j]]
+    ++ [move cargo dir2 state | cargo <- map return floorItems]
     where 
           floorItems = snd $ building !! fromEnum elevator
           n = length floorItems
@@ -132,6 +132,8 @@ main = do
     -- let x = takeWhile (not . solve11 start) [30..]
     -- print x
 
+display :: Building -> IO ()
+display = putStrLn . unlines . map show . reverse
 
 -- ============================================================================
 -- | for testing in the repl
@@ -147,3 +149,6 @@ exampleState = ([(First, [("hydrogen",Chip),("lithium",Chip)]),
                  (Third, [("lithium",Generator)]),
                  (Fourth, [])
                  ], First)
+
+buildingInput :: Building
+buildingInput = [(First,[("polonium",Generator),("thulium",Generator),("thulium",Chip),("promethium",Generator),("ruthenium",Generator),("ruthenium",Chip),("cobalt",Generator),("cobalt",Chip)]),(Second,[("polonium",Chip),("promethium",Chip)]),(Third,[]),(Fourth,[])]
