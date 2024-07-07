@@ -4,7 +4,6 @@ import Prelude hiding (floor)
 import Data.List.Split
 import Data.List
 import Control.Monad
--- import Data.Maybe
 
 data Type = Chip | Generator deriving ( Show, Eq )
 type Element = String
@@ -27,27 +26,28 @@ up = succ
 -- up Fourth = Nothing
 -- up x = Just $ succ x
 
+-- | each state is characterized by the building configuration and elevator level
 type State = (Building, Level)
 
-example :: IO String
-example = readFile "data/example11.txt"
-
 -- | parse input
+-- example:
+-- The first floor contains a hydrogen-compatible microchip and a lithium-compatible microchip.
+-- The second floor contains a hydrogen generator.
+-- The third floor contains a lithium generator.
+-- The fourth floor contains nothing relevant.
 parse :: String -> Building
 parse = zip [First .. Fourth] . map (foldr (filterItems . toItem ) [] .  splitOn "a ") . lines
     where
+        toItem :: String -> Maybe Item
+        toItem s
+            | "microchip" `isInfixOf` s = Just (takeWhile (/= '-') s, Chip)
+            | "generator" `isInfixOf` s = Just (takeWhile (/= ' ') s, Generator)
+            | otherwise = Nothing
         filterItems :: Maybe Item -> [Item] -> [Item]
         filterItems (Just x) xs = x:xs
         filterItems Nothing xs = xs
 
--- | parse substring of description
-toItem :: String -> Maybe Item
-toItem s
-    | "microchip" `isInfixOf` s = Just (takeWhile (/= '-') s, Chip)
-    | "generator" `isInfixOf` s = Just (takeWhile (/= ' ') s, Generator)
-    | otherwise = Nothing
-
--- | if there is a generator on the floo
+-- | if there is a generator on the floor
 -- every chip must be powered
 floorSafe :: Floor -> Bool
 floorSafe (_, xs)
@@ -58,19 +58,9 @@ floorSafe (_, xs)
                       isPowered c = fst c `elem` map fst gens
                   in all isPowered chips
 
-buildingSafe :: Building -> Bool
-buildingSafe = all floorSafe
-
+-- | check constraints on state
 stateSafe :: State -> Bool
 stateSafe = all floorSafe . fst
-
--- | Starting state from text example
-exampleState :: State
-exampleState = ([(First, [("hydrogen",Chip),("lithium",Chip)]),
-                 (Second, [("hydrogen",Generator)]),
-                 (Third, [("lithium",Generator)]),
-                 (Fourth, [])
-                 ], First)
 
 -- | move elevator with cargo 
 -- >>> move [("hydrogen", Chip)] up exampleState
@@ -78,12 +68,6 @@ exampleState = ([(First, [("hydrogen",Chip),("lithium",Chip)]),
 move :: Cargo -> Direction -> State -> State
 move cargo dir state = (building', elevator')
     where 
-          elevator = snd state
-          elevator' = dir elevator
-          building = fst state
-          -- floor = fst state !! fromEnum elevator
-          building' = updateBuilding cargo elevator elevator' building
-
           updateBuilding :: Cargo -> Level -> Level -> Building -> Building
           updateBuilding items from to = map (updateFloor items from to)
 
@@ -93,6 +77,11 @@ move cargo dir state = (building', elevator')
               | level == to = (level, items ++ cargo')
               | otherwise = (level, items)
 
+          elevator = snd state
+          elevator' = dir elevator
+          building = fst state
+          building' = updateBuilding cargo elevator elevator' building
+
 next :: State -> [State]
 next state@(building, elevator@First) = filter stateSafe $
     [move cargo up state | cargo <- [[floorItems!!i, floorItems!!j] | i <- [0..n-1], j <- [0..n-1], i < j]]
@@ -101,18 +90,19 @@ next state@(building, elevator@First) = filter stateSafe $
           floorItems = snd $ building !! fromEnum elevator
           n = length floorItems
 next state@(building, elevator@Fourth) = filter stateSafe $
-    [move cargo down state | cargo <- [[floorItems!!i, floorItems!!j] | i <- [0..n-1], j <- [0..n-1], i < j]]
-    ++ [move cargo down state | cargo <- map return floorItems]
+    [move cargo down state | cargo <- map return floorItems]
     where 
           floorItems = snd $ building !! fromEnum elevator
-          n = length floorItems
 next state@(building, elevator) = filter stateSafe $
-    [move cargo dir state | dir <- [up, down], cargo <- [[floorItems!!i, floorItems!!j] | i <- [0..n-1], j <- [0..n-1], i < j]]
+    -- [move cargo dir state | dir <- [up, down], cargo <- [[floorItems!!i, floorItems!!j] | i <- [0..n-1], j <- [0..n-1], i < j]]
+    -- ++ [move cargo down state | cargo <- map return floorItems]
+    [move cargo up state | cargo <- [[floorItems!!i, floorItems!!j] | i <- [0..n-1], j <- [0..n-1], i < j]]
     ++ [move cargo down state | cargo <- map return floorItems]
     where 
           floorItems = snd $ building !! fromEnum elevator
           n = length floorItems
 
+-- | check for final state
 solved :: State -> Bool
 solved (building, _) = n == (length . snd) (building !! 3)
     where n = sum $ map (length . snd) building
@@ -124,5 +114,36 @@ solved (building, _) = n == (length . snd) (building !! 3)
 repeatNext :: State -> Int -> [State]
 repeatNext start x = foldr (<=<) return (replicate x next) start
 
-solve11 :: Int -> Bool
-solve11 x = any solved $ repeatNext exampleState x
+solve11 :: State -> Int -> Bool
+solve11 start x = any solved $ repeatNext start x
+
+diRec :: Int -> [State] -> Int
+diRec n state
+    | any solved state = n
+    | otherwise = diRec (n+1) (state >>= next)
+
+main :: IO ()
+main = do
+    -- input <- fmap parse example
+    input <- parse <$> readFile "data/input11.txt"
+    let start = (input, First)
+    let n = diRec 0 $ return start
+    print n
+    -- let x = takeWhile (not . solve11 start) [30..]
+    -- print x
+
+
+-- ============================================================================
+-- | for testing in the repl
+-- ============================================================================
+
+example :: IO String
+example = readFile "data/example11.txt"
+
+-- | Starting state from text example
+exampleState :: State
+exampleState = ([(First, [("hydrogen",Chip),("lithium",Chip)]),
+                 (Second, [("hydrogen",Generator)]),
+                 (Third, [("lithium",Generator)]),
+                 (Fourth, [])
+                 ], First)
