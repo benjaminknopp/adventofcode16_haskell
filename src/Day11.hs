@@ -114,22 +114,22 @@ solved (building, _) = n == (length . snd) (building !! 3)
 repeatNext :: State -> Int -> [State]
 repeatNext start x = foldr (<=<) return (replicate x next) start
 
-solve11 :: State -> Int -> Bool
-solve11 start x = any solved $ repeatNext start x
+-- solve11' :: State -> Int -> Bool
+-- solve11' start x = any solved $ repeatNext start x
 
 diRec :: Int -> [State] -> Int
 diRec n state
     | any solved state = n
     | otherwise = diRec (n+1) (state >>= next)
 
-main :: IO ()
-main = do
+day11 :: IO ()
+day11 = do
     -- input <- fmap parse example
     input <- parse <$> readFile "data/input11.txt"
     let start = (input, First)
     let n = diRec 0 $ return start
     print n
-    -- let x = takeWhile (not . solve11 start) [30..]
+    -- let x = takeWhile (not . solve11' start) [30..]
     -- print x
 
 display :: Building -> IO ()
