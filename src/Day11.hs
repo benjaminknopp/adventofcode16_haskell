@@ -82,17 +82,17 @@ move cargo dir state = (building', elevator')
           building = fst state
           building' = updateBuilding cargo elevator elevator' building
 
-next :: State -> [State]
-next state@(building, elevator@First) = filter stateSafe $
-     _generateNextStates building elevator state up up
-next state@(building, elevator@Fourth) = filter stateSafe $
-    [move cargo down state | cargo <- map return floorItems]
+nextAll :: State -> [State]
+nextAll state@(building, elevator@First) = _generateNextStates building elevator state up up
+nextAll state@(building, elevator@Fourth) = [move cargo down state | cargo <- map return floorItems]
     where 
           floorItems = snd $ building !! fromEnum elevator
-next state@(building, elevator) = filter stateSafe $
-     _generateNextStates building elevator state up down
+nextAll state@(building, elevator) = _generateNextStates building elevator state up down
     -- -- [move cargo dir state | dir <- [up, down], cargo <- [[floorItems!!i, floorItems!!j] | i <- [0..n-1], j <- [0..n-1], i < j]]
     -- -- ++ [move cargo down state | cargo <- map return floorItems]
+
+next :: State -> [State]
+next = filter stateSafe . nextAll
 
 _generateNextStates :: Building -> Level -> State -> Direction -> Direction -> [State]
 _generateNextStates building elevator state dir1 dir2 = 
@@ -104,7 +104,7 @@ _generateNextStates building elevator state dir1 dir2 =
 
 -- | check for final state
 solved :: State -> Bool
-solved (building, _) = n == (length . snd) (building !! 3)
+solved (building, _) = n == (length . snd) (building !! fromEnum Third)
     where n = sum $ map (length . snd) building
 
 -- | init >>= next >>= next ....
@@ -118,9 +118,9 @@ repeatNext start x = foldr (<=<) return (replicate x next) start
 -- solve11' start x = any solved $ repeatNext start x
 
 diRec :: Int -> [State] -> Int
-diRec n state
-    | any solved state = n
-    | otherwise = diRec (n+1) (state >>= next)
+diRec n states
+    | any solved states = n
+    | otherwise = diRec (n+1) (states >>= next)
 
 day11 :: IO ()
 day11 = do
@@ -134,6 +134,9 @@ day11 = do
 
 display :: Building -> IO ()
 display = putStrLn . unlines . map show . reverse
+
+displayStates :: [State] -> IO ()
+displayStates = putStrLn . unlines . map (unlines . map show . reverse . fst)
 
 -- ============================================================================
 -- | for testing in the repl
@@ -152,3 +155,6 @@ exampleState = ([(First, [("hydrogen",Chip),("lithium",Chip)]),
 
 buildingInput :: Building
 buildingInput = [(First,[("polonium",Generator),("thulium",Generator),("thulium",Chip),("promethium",Generator),("ruthenium",Generator),("ruthenium",Chip),("cobalt",Generator),("cobalt",Chip)]),(Second,[("polonium",Chip),("promethium",Chip)]),(Third,[]),(Fourth,[])]
+
+-- ghci> (filter stateSafe) . next . (\x -> (x, First)) . parse <$> readFile "data/input11.txt" >>= displayStates 
+-- ghci> (>>= next) . return . head . (>>= next) . (>>= next) . return . (!! 3) . (>>= next) . return . head . (>>= next) . next . (\x -> (x, First)) . parse <$> readFile "data/example11.txt" >>= displayStates 
