@@ -1,3 +1,5 @@
+{-# LANGUAGE TupleSections #-}
+
 -- | Day 11: RTG
 module Day11 where
 import Prelude hiding (floor)
@@ -122,15 +124,32 @@ diRec n states
     | any solved states = n
     | otherwise = diRec (n+1) (states >>= next)
 
+-- day11 :: IO ()
+-- day11 = do
+--     -- input <- fmap parse example
+--     input <- parse <$> readFile "data/input11.txt"
+--     let start = (input, First)
+--     let n = diRec 0 $ return start
+--     print n
+--     -- let x = takeWhile (not . solve11' start) [30..]
+--     -- print x
+
 day11 :: IO ()
 day11 = do
-    -- input <- fmap parse example
-    input <- parse <$> readFile "data/input11.txt"
-    let start = (input, First)
-    let n = diRec 0 $ return start
-    print n
-    -- let x = takeWhile (not . solve11' start) [30..]
-    -- print x
+    let readBuilding = readFile "data/input11.txt"
+    let parseState = return . (, First) . parse
+    -- readBuilding >>= displayStates . return . (, First) . parse
+    readBuilding >>= displayStates . (return <=< parseState)
+    line <- getLine
+    if line == "q"
+        then return ()
+        else do
+            -- readBuilding >>= displayStates . next . (, First) . parse
+            -- readBuilding >>= displayStates . (>>= next) . next . (, First) . parse
+            -- readBuilding >>= displayStates . (next <=< parseState)
+            readBuilding >>= displayStates . (next <=< next <=< parseState)
+            putStrLn "==================="
+            day11
 
 display :: Building -> IO ()
 display = putStrLn . unlines . map show . reverse
