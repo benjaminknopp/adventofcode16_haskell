@@ -3,14 +3,15 @@ module Day11 where
 import Prelude hiding (floor)
 import Data.List.Split
 import Data.List
+import qualified Data.Set as Set
 import Control.Monad
 
-data Type = Chip | Generator deriving ( Show, Eq )
+data Type = Chip | Generator deriving ( Show, Eq, Ord )
 type Element = String
 type Item = (Element, Type)
 type Cargo = [Item]
 
-data Level = First | Second | Third | Fourth deriving ( Show, Enum, Eq )
+data Level = First | Second | Third | Fourth deriving ( Show, Enum, Eq, Ord )
 type Floor = (Level, Cargo)
 type Building = [Floor]
 type Direction = Level -> Level
@@ -104,7 +105,7 @@ _generateNextStates building elevator state dir1 dir2 =
 
 -- | check for final state
 solved :: State -> Bool
-solved (building, _) = n == (length . snd) (building !! fromEnum Third)
+solved (building, _) = n == (length . snd) (building !! fromEnum Fourth)
     where n = sum $ map (length . snd) building
 
 -- | init >>= next >>= next ....
@@ -122,12 +123,21 @@ diRec n states
     | any solved states = n
     | otherwise = diRec (n+1) (states >>= next)
 
+diRec' :: Int -> Set.Set State -> [State] -> Int
+diRec' n visited states
+    | any solved states = n
+    | length notVisited == 0 = n
+    | otherwise = diRec' (n+1) (Set.union statesSet visited) (notVisited  >>= next)
+    where statesSet = Set.fromList states
+          notVisited = Set.toList (Set.difference statesSet visited)
+
 day11 :: IO ()
 day11 = do
     -- input <- fmap parse example
     input <- parse <$> readFile "data/input11.txt"
     let start = (input, First)
     let n = diRec 0 $ return start
+    -- let n = diRec' 0 Set.empty $ return start
     print n
     -- let x = takeWhile (not . solve11' start) [30..]
     -- print x
