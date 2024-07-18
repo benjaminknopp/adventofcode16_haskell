@@ -5,6 +5,7 @@ module Day11 where
 import Prelude hiding (floor)
 import Data.List.Split
 import Data.List
+-- import Data.Set
 import Control.Monad
 
 data Type = Chip | Generator deriving ( Show, Eq )
@@ -96,6 +97,9 @@ nextAll state@(building, elevator) = _generateNextStates building elevator state
 next :: State -> [State]
 next = filter stateSafe . nextAll
 
+next' :: [State] -> State -> ([State], [State])
+next' visited state = (visited, filter stateSafe (nextAll state))
+
 _generateNextStates :: Building -> Level -> State -> Direction -> Direction -> [State]
 _generateNextStates building elevator state dir1 dir2 = 
     [move cargo dir1 state | cargo <- [[floorItems!!i, floorItems!!j] | i <- [0..n-1], j <- [0..n-1], i < j]]
@@ -134,12 +138,17 @@ diRec n states
 --     -- let x = takeWhile (not . solve11' start) [30..]
 --     -- print x
 
+parseState :: String -> [(Building, Level)]
+parseState = return . (, First) . parse
+
+readBuilding :: IO String
+-- readBuilding =  readFile "data/input11.txt"
+readBuilding =  readFile "data/example11.txt"
+
 day11 :: IO ()
 day11 = do
-    let readBuilding = readFile "data/input11.txt"
-    let parseState = return . (, First) . parse
     -- readBuilding >>= displayStates . return . (, First) . parse
-    readBuilding >>= displayStates . (return <=< parseState)
+    readBuilding >>= (print . length) . (return <=< parseState)
     line <- getLine
     if line == "q"
         then return ()
@@ -147,9 +156,14 @@ day11 = do
             -- readBuilding >>= displayStates . next . (, First) . parse
             -- readBuilding >>= displayStates . (>>= next) . next . (, First) . parse
             -- readBuilding >>= displayStates . (next <=< parseState)
-            readBuilding >>= displayStates . (next <=< next <=< parseState)
+            -- readBuilding >>= displayStates . (next <=< next <=< parseState)
+            readBuilding >>= (print . length) . (next <=< next <=< parseState)
             putStrLn "==================="
             day11
+
+printLengths :: IO ()
+printLengths = mapM_ f [1..7]
+    where f i =  readBuilding >>= (print . length) . (foldr (<=<) return (replicate i next) <=< parseState)
 
 display :: Building -> IO ()
 display = putStrLn . unlines . map show . reverse
