@@ -4,12 +4,13 @@ import Prelude hiding (floor)
 import Data.List.Split
 import Data.List
 import qualified Data.Set as Set
+import Data.Set (Set)
 import Control.Monad
 
 data Type = Chip | Generator deriving ( Show, Eq, Ord )
 type Element = String
 type Item = (Element, Type)
-type Cargo = [Item]
+type Cargo = Set Item
 
 data Level = First | Second | Third | Fourth deriving ( Show, Enum, Eq, Ord )
 type Floor = (Level, Cargo)
@@ -37,7 +38,7 @@ type State = (Building, Level)
 -- The third floor contains a lithium generator.
 -- The fourth floor contains nothing relevant.
 parse :: String -> Building
-parse = zip [First .. Fourth] . map (foldr (filterItems . toItem ) [] .  splitOn "a ") . lines
+parse = zip [First .. Fourth] . map (Set.fromList . foldr (filterItems . toItem ) [] .  splitOn "a ") . lines
     where
         toItem :: String -> Maybe Item
         toItem s
@@ -52,11 +53,11 @@ parse = zip [First .. Fourth] . map (foldr (filterItems . toItem ) [] .  splitOn
 -- every chip must be powered
 floorSafe :: Floor -> Bool
 floorSafe (_, xs)
-    | Generator `notElem` map snd xs = True
-    | otherwise = let chips = filter ((Chip ==) . snd) xs
-                      gens = filter ((Generator ==) . snd) xs
+    | Set.null (Set.filter ((== Generator) . snd) xs) = True
+    | otherwise = let chips = Set.filter ((Chip ==) . snd) xs
+                      gens = Set.filter ((Generator ==) . snd) xs
                       isPowered :: Item -> Bool
-                      isPowered c = fst c `elem` map fst gens
+                      isPowered c = fst c `elem` Set.map fst gens
                   in all isPowered chips
 
 -- | check constraints on state
@@ -74,8 +75,8 @@ move cargo dir state = (building', elevator')
 
           updateFloor :: Cargo -> Level -> Level -> Floor -> Floor
           updateFloor cargo' from to (level, items)
-              | level == from = (level, filter (`notElem` cargo') items)
-              | level == to = (level, items ++ cargo')
+              | level == from = (level, items `Set.difference` cargo')
+              | level == to = (level, items `Set.union` cargo')
               | otherwise = (level, items)
 
           elevator = snd state
@@ -85,23 +86,21 @@ move cargo dir state = (building', elevator')
 
 nextAll :: State -> [State]
 nextAll state@(building, elevator@First) = _generateNextStates building elevator state up up
-nextAll state@(building, elevator@Fourth) = [move cargo down state | cargo <- map return floorItems]
+nextAll state@(building, elevator@Fourth) = [move (Set.singleton item) down state | item <- Set.toList floorItems]
     where 
           floorItems = snd $ building !! fromEnum elevator
 nextAll state@(building, elevator) = _generateNextStates building elevator state up down
-    -- -- [move cargo dir state | dir <- [up, down], cargo <- [[floorItems!!i, floorItems!!j] | i <- [0..n-1], j <- [0..n-1], i < j]]
-    -- -- ++ [move cargo down state | cargo <- map return floorItems]
 
 next :: State -> [State]
 next = filter stateSafe . nextAll
 
 _generateNextStates :: Building -> Level -> State -> Direction -> Direction -> [State]
 _generateNextStates building elevator state dir1 dir2 = 
-    [move cargo dir1 state | cargo <- [[floorItems!!i, floorItems!!j] | i <- [0..n-1], j <- [0..n-1], i < j]]
-    ++ [move cargo dir2 state | cargo <- map return floorItems]
+    [move (Set.fromList [floorItems !! i, floorItems !! j]) dir1 state | i <- [0..n-1], j <- [0..n-1], i < j]
+    ++ [move (Set.singleton item) dir2 state | item <- floorItems]
     where 
-          floorItems = snd $ building !! fromEnum elevator
-          n = length floorItems
+        floorItems = Set.toList $ snd $ building !! fromEnum elevator
+        n = length floorItems
 
 -- | check for final state
 solved :: State -> Bool
@@ -126,7 +125,6 @@ diRec n states
 diRec' :: Int -> Set.Set State -> [State] -> Int
 diRec' n visited states
     | any solved states = n
-    | length notVisited == 0 = n
     | otherwise = diRec' (n+1) (Set.union statesSet visited) (notVisited  >>= next)
     where statesSet = Set.fromList states
           notVisited = Set.toList (Set.difference statesSet visited)
@@ -135,9 +133,10 @@ day11 :: IO ()
 day11 = do
     -- input <- fmap parse example
     input <- parse <$> readFile "data/input11.txt"
+    -- input <- parse <$> readFile "data/example11.txt"
     let start = (input, First)
-    let n = diRec 0 $ return start
-    -- let n = diRec' 0 Set.empty $ return start
+    -- let n = diRec 0 $ return start
+    let n = diRec' 0 Set.empty $ return start
     print n
     -- let x = takeWhile (not . solve11' start) [30..]
     -- print x
@@ -154,17 +153,6 @@ displayStates = putStrLn . unlines . map (unlines . map show . reverse . fst)
 
 example :: IO String
 example = readFile "data/example11.txt"
-
--- | Starting state from text example
-exampleState :: State
-exampleState = ([(First, [("hydrogen",Chip),("lithium",Chip)]),
-                 (Second, [("hydrogen",Generator)]),
-                 (Third, [("lithium",Generator)]),
-                 (Fourth, [])
-                 ], First)
-
-buildingInput :: Building
-buildingInput = [(First,[("polonium",Generator),("thulium",Generator),("thulium",Chip),("promethium",Generator),("ruthenium",Generator),("ruthenium",Chip),("cobalt",Generator),("cobalt",Chip)]),(Second,[("polonium",Chip),("promethium",Chip)]),(Third,[]),(Fourth,[])]
 
 -- ghci> (filter stateSafe) . next . (\x -> (x, First)) . parse <$> readFile "data/input11.txt" >>= displayStates 
 -- ghci> (>>= next) . return . head . (>>= next) . (>>= next) . return . (!! 3) . (>>= next) . return . head . (>>= next) . next . (\x -> (x, First)) . parse <$> readFile "data/example11.txt" >>= displayStates 
