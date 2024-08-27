@@ -20,13 +20,6 @@ down :: Direction
 down = pred
 up :: Direction
 up = succ
--- type Direction = Level -> Maybe Level
--- down :: Direction
--- down First = Nothing
--- down x = Just $ pred x
--- up :: Direction
--- up Fourth = Nothing
--- up x = Just $ succ x
 
 -- | each state is characterized by the building configuration and elevator level
 type State = (Building, Level)
@@ -114,9 +107,6 @@ solved (building, _) = n == (length . snd) (building !! fromEnum Fourth)
 repeatNext :: State -> Int -> [State]
 repeatNext start x = foldr (<=<) return (replicate x next) start
 
--- solve11' :: State -> Int -> Bool
--- solve11' start x = any solved $ repeatNext start x
-
 diRec :: Int -> [State] -> Int
 diRec n states
     | any solved states = n
@@ -131,28 +121,16 @@ diRec' n visited states
 
 day11 :: IO ()
 day11 = do
-    -- input <- fmap parse example
-    input <- parse <$> readFile "data/input11.txt"
+    -- input <- parse <$> readFile "data/input11.txt"
+    input <- parse <$> readFile "data/input11b.txt"
     -- input <- parse <$> readFile "data/example11.txt"
     let start = (input, First)
     -- let n = diRec 0 $ return start
     let n = diRec' 0 Set.empty $ return start
     print n
-    -- let x = takeWhile (not . solve11' start) [30..]
-    -- print x
 
 display :: Building -> IO ()
 display = putStrLn . unlines . map show . reverse
 
 displayStates :: [State] -> IO ()
 displayStates = putStrLn . unlines . map (unlines . map show . reverse . fst)
-
--- ============================================================================
--- | for testing in the repl
--- ============================================================================
-
-example :: IO String
-example = readFile "data/example11.txt"
-
--- ghci> (filter stateSafe) . next . (\x -> (x, First)) . parse <$> readFile "data/input11.txt" >>= displayStates 
--- ghci> (>>= next) . return . head . (>>= next) . (>>= next) . return . (!! 3) . (>>= next) . return . head . (>>= next) . next . (\x -> (x, First)) . parse <$> readFile "data/example11.txt" >>= displayStates 
