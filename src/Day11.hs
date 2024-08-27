@@ -141,14 +141,14 @@ diRec n states
 parseState :: String -> [(Building, Level)]
 parseState = return . (, First) . parse
 
-readBuilding :: IO String
+readBuilding :: String -> IO String
 -- readBuilding =  readFile "data/input11.txt"
-readBuilding =  readFile "data/example11.txt"
+readBuilding s = readFile ("data/"++s++"11.txt")
 
 day11 :: IO ()
 day11 = do
     -- readBuilding >>= displayStates . return . (, First) . parse
-    readBuilding >>= (print . length) . (return <=< parseState)
+    readBuilding "example" >>= (print . length) . (return <=< parseState)
     line <- getLine
     if line == "q"
         then return ()
@@ -157,13 +157,13 @@ day11 = do
             -- readBuilding >>= displayStates . (>>= next) . next . (, First) . parse
             -- readBuilding >>= displayStates . (next <=< parseState)
             -- readBuilding >>= displayStates . (next <=< next <=< parseState)
-            readBuilding >>= (print . length) . (next <=< next <=< parseState)
+            readBuilding "example" >>= (print . length) . (next <=< next <=< parseState)
             putStrLn "==================="
             day11
 
-printLengths :: IO ()
-printLengths = mapM_ f [1..7]
-    where f i =  readBuilding >>= (print . length) . (foldr (<=<) return (replicate i next) <=< parseState)
+printLengths :: String -> IO ()
+printLengths s = mapM_ f [1..7]
+    where f i =  readBuilding s >>= (print . length) . (foldr (<=<) return (replicate i next) <=< parseState)
 
 display :: Building -> IO ()
 display = putStrLn . unlines . map show . reverse
