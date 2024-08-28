@@ -121,8 +121,8 @@ diRec' n visited states
 
 day11 :: IO ()
 day11 = do
-    -- input <- parse <$> readFile "data/input11.txt"
-    input <- parse <$> readFile "data/input11b.txt"
+    input <- parse <$> readFile "data/input11.txt"
+    -- input <- parse <$> readFile "data/input11b.txt"
     -- input <- parse <$> readFile "data/example11.txt"
     let start = (input, First)
     -- let n = diRec 0 $ return start

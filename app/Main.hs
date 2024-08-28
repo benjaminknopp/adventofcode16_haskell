@@ -15,16 +15,27 @@ import Day11 ( day11 )
 
 main :: IO ()
 main = do
+    putStrLn "Solution of Day01:"
     day01
+    putStrLn "Solution of Day02:"
     day02
+    putStrLn "Solution of Day03:"
     day03
+    putStrLn "Solution of Day04:"
     day04
-    -- day05
+    putStrLn "Solution of Day05 (this takes a while):"
+    day05
+    putStrLn "Solution of Day06:"
     day06
+    putStrLn "Solution of Day07:"
     day07
+    putStrLn "Solution of Day08:"
     day08
+    putStrLn "Solution of Day09:"
     day09
+    putStrLn "Solution of Day10:"
     day10
+    putStrLn "Solution of Day11 (only part one because part two takes very long):"
     day11
 
 day10 :: IO ()
