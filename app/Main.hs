@@ -12,6 +12,7 @@ import Day08 ( State(State), parse, next )
 import Day09 ( duRek, insertTree, evalNode )
 import Day10 ( solve )
 import Day11 ( day11 )
+import Day12 ( day12a, day12b )
 
 main :: IO ()
 main = do
@@ -37,6 +38,10 @@ main = do
     day10
     putStrLn "Solution of Day11 (only part one because part two takes very long):"
     day11
+    putStrLn "Solution of Day12a:"
+    day12a
+    putStrLn "Solution of Day12b:"
+    day12b
 
 day10 :: IO ()
 day10 = readFile "data/input10.txt" >>= (print . (solve . lines))

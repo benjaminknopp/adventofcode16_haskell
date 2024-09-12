@@ -12,31 +12,28 @@ data Cmd = Cpy IntOrReg Reg
          | Jnz IntOrReg Int
     deriving (Show)
 
--- data Registers = Registers {a::Int
---                           , b::Int
---                           , c::Int
---                           , d::Int} deriving (Show)
 type Registers = Map Reg Int
 type Tape = [Cmd]
 type Index = Int
 type State = (Index, Registers)
 
+day12 :: Map Char Int -> IO ()
+day12 initialReg = do
+    f <- readFile "data/input12.txt"
+    let tape = (map parse . lines) f
+    print tape
+    print $ solve tape (0, initialReg)
 
-initialReg :: Registers
-initialReg = Map.fromList [('a', 0), ('b', 0), ('c', 0), ('d', 0)]
+day12a :: IO ()
+day12a = day12 $ Map.fromList [('a', 0), ('b', 0), ('c', 0), ('d', 0)] 
 
-day12 :: IO ()
--- day12 = readFile "data/example12.txt" >>= (print . map parse . lines)
-day12 = readFile "data/example12.txt" >>= (print . map parse . lines)
-
--- run :: [Cmd] -> Registers
--- run _ = Registers 1 2 3 4
+day12b :: IO ()
+day12b = day12 $ Map.fromList [('a', 0), ('b', 0), ('c', 1), ('d', 0)] 
 
 solve :: Tape -> State -> State
-solve tape (i, r) 
-    | i > length tape = (i, r)
-    | otherwise = solve tape (i, r)
--- next :: State -> State
+solve tape s@(i, _) 
+    | i >= length tape = s
+    | otherwise = solve tape (eval (readTape tape i) s) 
 
 readTape :: Tape -> Index -> Cmd
 readTape tape i = tape!!i
