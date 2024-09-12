@@ -1,14 +1,16 @@
 module Day12 where
-import Data.List.Split ( splitOn )
 import Data.Map (Map)
 import qualified Data.Map as Map
+import Data.Char (isDigit)
 
 type Reg = Char  -- 'a' | 'b' | 'c' | 'd'
-data IntOrReg = Value Int | Register Reg
+data IntOrReg = Value Int | Register Reg 
+    deriving (Show)
 data Cmd = Cpy IntOrReg Reg
          | Inc Reg
          | Dec Reg 
          | Jnz IntOrReg Int
+    deriving (Show)
 
 -- data Registers = Registers {a::Int
 --                           , b::Int
@@ -24,20 +26,40 @@ initialReg :: Registers
 initialReg = Map.fromList [('a', 0), ('b', 0), ('c', 0), ('d', 0)]
 
 day12 :: IO ()
-day12 = readFile "data/example12.txt" >>= (print . map (splitOn " ") . lines)
+-- day12 = readFile "data/example12.txt" >>= (print . map parse . lines)
+day12 = readFile "data/example12.txt" >>= (print . map parse . lines)
 
 -- run :: [Cmd] -> Registers
 -- run _ = Registers 1 2 3 4
 
--- solve :: Tape -> State -> State
+solve :: Tape -> State -> State
+solve tape (i, r) 
+    | i > length tape = (i, r)
+    | otherwise = solve tape (i, r)
 -- next :: State -> State
--- read :: Tape -> Index -> Cmd
+
+readTape :: Tape -> Index -> Cmd
+readTape tape i = tape!!i
+
 eval :: Cmd -> State -> State
-eval (Cpy x y) (i, r) = (0, initialReg)
+eval (Cpy x y) s = cpy x y s
 eval (Inc  c) s = inc c s
 eval (Dec c) s = dec c s
 eval (Jnz x y) s = jnz x y s
--- parse :: String -> Cmd
+
+parse :: String -> Cmd
+parse s = case words s of
+    ["cpy", x, y] -> Cpy (parseArg x) (head y)
+    ["inc", [x]] -> Inc x
+    ["dec", [x]] -> Dec x
+    ["jnz", x, y] -> Jnz (parseArg x) (read y)
+    _ -> error "Parsing error"
+
+parseArg :: String -> IntOrReg
+parseArg x'
+    | all isDigit x' = Value (read x')
+    | otherwise = Register (head x')
+       
 
 cpy :: IntOrReg -> Reg -> State -> State
 cpy (Value x) c (i, m) = (i+1, Map.insert c x m)
@@ -59,4 +81,3 @@ jnz (Register x) j (i, m) = let maybeV = Map.lookup x m in
         Just 0 -> (i + 1, m)
         Just _ -> (i + j, m)
         Nothing -> error "Key Lookup Error"
-
